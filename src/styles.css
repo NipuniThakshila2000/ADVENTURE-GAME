@@ -217,6 +217,37 @@ button:not(:disabled):hover {
   min-height: 52px;
 }
 
+.difficulty-picker {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.difficulty-picker button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+}
+
+.difficulty-picker button.selected {
+  border-color: rgba(217, 183, 106, 0.72);
+  background: rgba(217, 183, 106, 0.12);
+  box-shadow: 0 0 24px rgba(217, 183, 106, 0.12);
+}
+
+.difficulty-picker span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
 .save-note,
 .small {
   color: var(--muted);
@@ -378,6 +409,18 @@ p {
 
 .panel h2 {
   margin-top: 0;
+}
+
+.difficulty-badge {
+  display: inline-flex;
+  margin: -4px 0 14px;
+  padding: 5px 9px;
+  border: 1px solid rgba(217, 183, 106, 0.38);
+  border-radius: 999px;
+  color: #f4dc97;
+  background: rgba(217, 183, 106, 0.08);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .resource-list {

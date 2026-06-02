@@ -1,4 +1,6 @@
 import type { Choice, Station } from "../types/game";
+import type { DifficultyLevel } from "../types/game";
+import { getChoiceDisplayLabel } from "../data/gameEngine";
 import ChoiceButton from "./ChoiceButton";
 
 type StationLike = Pick<Station, "title" | "story"> & { subtitle?: string; lesson?: string; choices: Choice[] };
@@ -7,11 +9,13 @@ export default function StationCard({
   stationLike,
   imageKey,
   isEvent = false,
+  difficulty,
   onChoice,
 }: {
   stationLike: StationLike;
   imageKey: string;
   isEvent?: boolean;
+  difficulty: DifficultyLevel;
   onChoice: (choiceId: string) => void;
 }) {
   return (
@@ -27,8 +31,13 @@ export default function StationCard({
         <p>{stationLike.story}</p>
         {!isEvent && <p className="lesson-line">{stationLike.lesson}</p>}
         <div className="choices">
-          {stationLike.choices.map((choice) => (
-            <ChoiceButton key={choice.id} choice={choice} onClick={() => onChoice(choice.id)} />
+          {stationLike.choices.map((choice, index) => (
+            <ChoiceButton
+              key={choice.id}
+              choice={choice}
+              displayLabel={getChoiceDisplayLabel(choice, difficulty, index)}
+              onClick={() => onChoice(choice.id)}
+            />
           ))}
         </div>
       </div>

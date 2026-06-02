@@ -8,6 +8,8 @@ export type ResourceKey =
   | "focus"
   | "recall";
 
+export type DifficultyLevel = "gentle" | "narrow" | "tohu";
+
 export type Choice = {
   id: string;
   label: string;
@@ -72,6 +74,7 @@ export type QuizHistoryEntry = {
 };
 
 export type GameState = {
+  difficulty: DifficultyLevel;
   day: number;
   stationId: string;
   resources: Record<ResourceKey, number>;

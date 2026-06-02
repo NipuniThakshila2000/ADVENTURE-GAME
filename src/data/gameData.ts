@@ -1,4 +1,4 @@
-import type { Choice, CourseNote, Ending, GameState, RandomEvent, ResourceKey, Station } from "../types/game";
+import type { Choice, CourseNote, DifficultyLevel, Ending, GameState, RandomEvent, ResourceKey, Station } from "../types/game";
 
 export const resourceLabels: Record<ResourceKey, string> = {
   consistency: "Consistency",
@@ -22,7 +22,147 @@ export const initialResources: GameState["resources"] = {
   recall: 40,
 };
 
+export const difficultySettings: Record<
+  DifficultyLevel,
+  {
+    title: string;
+    description: string;
+    positiveMultiplier: number;
+    negativeMultiplier: number;
+    eventMod: number;
+    dayBonus: number;
+    startingAdjustments: Partial<Record<ResourceKey, number>>;
+  }
+> = {
+  gentle: {
+    title: "Gentle Recall",
+    description: "The original learning-focused trail with clear choices and forgiving consequences.",
+    positiveMultiplier: 1,
+    negativeMultiplier: 1,
+    eventMod: 3,
+    dayBonus: 0,
+    startingAdjustments: {},
+  },
+  narrow: {
+    title: "Narrow Road",
+    description: "Larger resource swings, more trail events, and subtler choice language.",
+    positiveMultiplier: 0.9,
+    negativeMultiplier: 1.35,
+    eventMod: 2,
+    dayBonus: 1,
+    startingAdjustments: { clarity: -5, openness: -5, recall: -5, rest: -3 },
+  },
+  tohu: {
+    title: "Tohu Deep",
+    description: "The hardest trail: lower reserves, frequent disruptions, and ambiguous course-memory choices.",
+    positiveMultiplier: 0.75,
+    negativeMultiplier: 1.75,
+    eventMod: 1,
+    dayBonus: 2,
+    startingAdjustments: { consistency: -8, clarity: -10, rest: -8, openness: -10, discernment: -8, focus: -8, recall: -10 },
+  },
+};
+
+export const narrowChoiceLabels: Record<string, string> = {
+  "commit-review": "Pause at the threshold and gather intention",
+  "commit-rush": "Trust momentum to carry the opening",
+  "commit-perfect": "Wait for the right inner weather",
+  "daily-rhythm": "Choose the small repeated measure",
+  "only-inspired": "Let inspiration decide the rhythm",
+  "force-long": "Answer seriousness with more intensity",
+  "fixed-time": "Mark a clear coordinate",
+  "leave-vague": "Keep the day open and flexible",
+  "realistic-goal": "Bind structure to mercy",
+  "suppress-thoughts": "Press the room into silence",
+  "watch-thought": "Let the thought stand where it can be seen",
+  "follow-story": "Let the thread explain itself fully",
+  "become-witness": "Take the still seat at the edge",
+  "control-act": "Step into the movement and arrange it",
+  "observe-tent": "Widen attention beyond the nearest act",
+  "reflect-slowly": "Allow reflection before meaning",
+  "label-all": "Name each appearance as it arrives",
+  "notice-return": "See the reaction and return",
+  "sit-openness": "Remain with the undefined field",
+  "demand-definition": "Ask for clear terms before moving",
+  "make-spectacle": "Let the field become vivid and impressive",
+  "soften-edge": "Let the edge lose its hardness",
+  "name-repeat": "Strengthen the name until it holds",
+  "notice-relax": "Find the boundary, then ease it",
+  "settle": "Give sensitivity room to settle",
+  "call-failure": "Treat the wobble as a verdict",
+  "gentle-practice": "Continue without tightening the reins",
+  "watch-heart": "Watch where the heart gives weight",
+  "heavy-story": "Let the feeling gather a full account",
+  "journal-note": "Keep one plain line of witness",
+  "bring-emotion-under-guidance": "Hold the reins without panic",
+  "reduce-opacity": "Let the problem become less opaque",
+  "clutch-problem": "Make the problem the whole field",
+  "review-before-choice": "Return to the lesson before acting",
+  "review-log": "Gather the trail into memory",
+  "humility": "Cross the threshold steadily",
+  "rush-basics": "Leave the basics behind quickly",
+};
+
+export const tohuChoiceLabels: Record<string, string> = {
+  "commit-review": "The slow gate",
+  "commit-rush": "The bright opening",
+  "commit-perfect": "The waiting room",
+  "daily-rhythm": "The measured thread",
+  "only-inspired": "The windward thread",
+  "force-long": "The weighted thread",
+  "fixed-time": "The marked coordinate",
+  "leave-vague": "The open coordinate",
+  "realistic-goal": "The merciful coordinate",
+  "suppress-thoughts": "The sealed room",
+  "watch-thought": "The visible room",
+  "follow-story": "The speaking room",
+  "become-witness": "The edge seat",
+  "control-act": "The center ring",
+  "observe-tent": "The whole tent",
+  "reflect-slowly": "The clear glass",
+  "label-all": "The named glass",
+  "notice-return": "The returning glass",
+  "sit-openness": "The unheld field",
+  "demand-definition": "The fixed field",
+  "make-spectacle": "The shining field",
+  "soften-edge": "The feathered edge",
+  "name-repeat": "The iron edge",
+  "notice-relax": "The known edge",
+  "settle": "The quieting vessel",
+  "call-failure": "The verdict vessel",
+  "gentle-practice": "The steady vessel",
+  "watch-heart": "The weighed heart",
+  "heavy-story": "The storied heart",
+  "journal-note": "The written heart",
+  "bring-emotion-under-guidance": "The gathered reins",
+  "reduce-opacity": "The translucent problem",
+  "clutch-problem": "The sealed problem",
+  "review-before-choice": "The recalled problem",
+  "review-log": "The gathered threshold",
+  "humility": "The steady threshold",
+  "rush-basics": "The thin threshold",
+};
+
+export function createInitialGameState(difficulty: DifficultyLevel = "gentle"): GameState {
+  const settings = difficultySettings[difficulty];
+  const resources = { ...initialResources };
+  (Object.keys(settings.startingAdjustments) as ResourceKey[]).forEach((key) => {
+    resources[key] = Math.max(0, Math.min(100, resources[key] + (settings.startingAdjustments[key] ?? 0)));
+  });
+  return {
+    difficulty,
+    day: 1,
+    stationId: "gate-of-commitment",
+    resources,
+    log: [`Day 1: You begin the ${settings.title} trail at the Gate of Commitment.`],
+    unlockedNotes: [],
+    completedStations: [],
+    quizHistory: [],
+  };
+}
+
 export const initialGameState: GameState = {
+  difficulty: "gentle",
   day: 1,
   stationId: "gate-of-commitment",
   resources: initialResources,

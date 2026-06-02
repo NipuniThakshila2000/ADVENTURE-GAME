@@ -1,5 +1,16 @@
-import { endings, getNoteForStation, getStation, nextStationId, randomEvents, stationIndex, stations } from "./gameData";
-import type { Choice, Ending, GameState, QuizQuestion, ResourceKey } from "../types/game";
+import {
+  difficultySettings,
+  endings,
+  getNoteForStation,
+  getStation,
+  narrowChoiceLabels,
+  nextStationId,
+  randomEvents,
+  stationIndex,
+  stations,
+  tohuChoiceLabels,
+} from "./gameData";
+import type { Choice, DifficultyLevel, Ending, GameState, QuizQuestion, ResourceKey } from "../types/game";
 
 export const STORAGE_KEY = "cms-redux-tohu-journey-save";
 
@@ -7,20 +18,39 @@ export function clamp(value: number) {
   return Math.max(0, Math.min(100, value));
 }
 
-export function applyEffects(resources: GameState["resources"], effects: Choice["effects"]) {
+export function normalizeGameState(state: GameState): GameState {
+  return {
+    ...state,
+    difficulty: state.difficulty ?? "gentle",
+  };
+}
+
+function scaleEffect(value: number, difficulty: DifficultyLevel) {
+  const settings = difficultySettings[difficulty];
+  const multiplier = value >= 0 ? settings.positiveMultiplier : settings.negativeMultiplier;
+  return value === 0 ? 0 : Math.trunc(value * multiplier);
+}
+
+export function applyEffects(resources: GameState["resources"], effects: Choice["effects"], difficulty: DifficultyLevel = "gentle") {
   const next = { ...resources };
   (Object.keys(effects) as ResourceKey[]).forEach((key) => {
-    next[key] = clamp(next[key] + (effects[key] ?? 0));
+    next[key] = clamp(next[key] + scaleEffect(effects[key] ?? 0, difficulty));
   });
   return next;
 }
 
-export function chooseEnding(resources: GameState["resources"]): Ending {
-  if (resources.openness <= 25) return endings.find((ending) => ending.id === "clutching-loop") ?? endings[0];
-  if (resources.consistency <= 42 && resources.focus <= 42) return endings.find((ending) => ending.id === "calendar-return") ?? endings[0];
-  if (resources.rest <= 38 && resources.consistency >= 55) return endings.find((ending) => ending.id === "gentle-reset") ?? endings[0];
-  if (resources.discernment >= 70 && resources.consistency < 68) return endings.find((ending) => ending.id === "witness-awakens") ?? endings[0];
-  if (resources.consistency >= 68 && resources.discernment >= 68 && resources.recall >= 62 && resources.openness >= 62) {
+export function chooseEnding(resources: GameState["resources"], difficulty: DifficultyLevel = "gentle"): Ending {
+  const hard = difficulty === "tohu" ? 8 : difficulty === "narrow" ? 4 : 0;
+  if (resources.openness <= 25 + hard) return endings.find((ending) => ending.id === "clutching-loop") ?? endings[0];
+  if (resources.consistency <= 42 + hard && resources.focus <= 42 + hard) return endings.find((ending) => ending.id === "calendar-return") ?? endings[0];
+  if (resources.rest <= 38 + hard && resources.consistency >= 55) return endings.find((ending) => ending.id === "gentle-reset") ?? endings[0];
+  if (resources.discernment >= 70 + hard && resources.consistency < 68 + hard) return endings.find((ending) => ending.id === "witness-awakens") ?? endings[0];
+  if (
+    resources.consistency >= 68 + hard &&
+    resources.discernment >= 68 + hard &&
+    resources.recall >= 62 + hard &&
+    resources.openness >= 62 + hard
+  ) {
     return endings.find((ending) => ending.id === "ready-next-module") ?? endings[0];
   }
   return endings.find((ending) => ending.id === "witness-awakens") ?? endings[0];
@@ -29,7 +59,7 @@ export function chooseEnding(resources: GameState["resources"]): Ending {
 export function getSavedGame(): GameState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as GameState) : null;
+    return raw ? normalizeGameState(JSON.parse(raw) as GameState) : null;
   } catch {
     return null;
   }
@@ -44,8 +74,10 @@ export function clearSavedGame() {
 }
 
 export function shouldTriggerRandomEvent(state: GameState) {
+  const settings = difficultySettings[state.difficulty];
+  if (settings.eventMod === 1) return state.day < 88;
   const seed = state.day + state.completedStations.length * 11 + state.log.length * 3;
-  return seed % 3 === 0 && state.day < 88;
+  return seed % settings.eventMod === 0 && state.day < 88;
 }
 
 export function pickRandomEvent(state: GameState) {
@@ -80,16 +112,16 @@ export function redirectForMiniStoryline(choice: Choice) {
 export function applyChoice(state: GameState, choice: Choice, fromRandomEvent = false): GameState {
   const station = getStation(state.stationId);
   const note = getNoteForStation(station.id);
-  const resources = applyEffects(state.resources, choice.effects);
+  const resources = applyEffects(state.resources, choice.effects, state.difficulty);
   const completedStations = fromRandomEvent
     ? state.completedStations
     : Array.from(new Set([...state.completedStations, station.id]));
   const unlockedNotes = note ? Array.from(new Set([...state.unlockedNotes, note.id, choice.unlockNoteId].filter(Boolean) as string[])) : state.unlockedNotes;
-  const day = fromRandomEvent ? state.day : advanceDays(state.day, station.id, choice.id);
+  const day = fromRandomEvent ? state.day : clampDay(advanceDays(state.day, station.id, choice.id) + difficultySettings[state.difficulty].dayBonus);
   const redirected = redirectForMiniStoryline(choice);
   const nextId = fromRandomEvent ? state.stationId : choice.nextStationId ?? redirected ?? nextStationId(station.id);
   const reachedEnd = day >= 90 || station.id === "inner-temple-threshold";
-  const ending = reachedEnd ? chooseEnding(resources) : undefined;
+  const ending = reachedEnd ? chooseEnding(resources, state.difficulty) : undefined;
   const miniLine = redirected ? ` The detour becomes a learning dead end, and you are redirected to ${getStation(redirected).title}.` : "";
 
   return {
@@ -106,7 +138,7 @@ export function applyChoice(state: GameState, choice: Choice, fromRandomEvent = 
 
 export function applyQuizAnswer(state: GameState, question: QuizQuestion, selectedIndex: number): GameState {
   const correct = selectedIndex === question.correctIndex;
-  const resources = applyEffects(state.resources, correct ? question.effectsCorrect : question.effectsWrong);
+  const resources = applyEffects(state.resources, correct ? question.effectsCorrect : question.effectsWrong, state.difficulty);
   return {
     ...state,
     resources,
@@ -132,4 +164,11 @@ export function finalScore(resources: GameState["resources"], quizHistory: GameS
   const resourceAverage = Object.values(resources).reduce((sum, value) => sum + value, 0) / Object.values(resources).length;
   const quizScore = quizHistory.length ? (quizHistory.filter((item) => item.correct).length / quizHistory.length) * 100 : 0;
   return Math.round(resourceAverage * 0.75 + quizScore * 0.25);
+}
+
+export function getChoiceDisplayLabel(choice: Choice, difficulty: DifficultyLevel, index: number) {
+  if (difficulty === "gentle") return choice.label;
+  if (difficulty === "narrow") return narrowChoiceLabels[choice.id] ?? choice.label;
+  const fallback = ["The first movement", "The second movement", "The third movement", "The fourth movement"];
+  return tohuChoiceLabels[choice.id] ?? fallback[index] ?? choice.label;
 }

@@ -59,15 +59,15 @@ export default function GameLayout({ gameState, setGameState }: Props) {
       <section className="game-main">
         <TrailProgress stationId={station.id} day={gameState.day} />
         {event ? (
-          <StationCard stationLike={event} imageKey="cover" isEvent onChoice={onChoice} />
+          <StationCard stationLike={event} imageKey="cover" isEvent difficulty={gameState.difficulty} onChoice={onChoice} />
         ) : needsQuiz ? (
           <QuizCard question={quiz} onAnswer={onQuizAnswer} />
         ) : (
-          <StationCard stationLike={station} imageKey={station.imageKey} onChoice={onChoice} />
+          <StationCard stationLike={station} imageKey={station.imageKey} difficulty={gameState.difficulty} onChoice={onChoice} />
         )}
       </section>
       <aside className="side-stack">
-        <StatusPanel resources={gameState.resources} />
+        <StatusPanel resources={gameState.resources} difficulty={gameState.difficulty} />
         <LessonRecap station={station} unlockedNotes={gameState.unlockedNotes} />
         <JourneyLog log={gameState.log} />
       </aside>

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Images, Play, RotateCcw } from "lucide-react";
-import { courseNotes, endings, getStation, initialGameState } from "./data/gameData";
+import { courseNotes, createInitialGameState, endings, getStation, initialGameState } from "./data/gameData";
 import { clearSavedGame, getSavedGame, saveGame } from "./data/gameEngine";
-import type { GameState } from "./types/game";
+import type { DifficultyLevel, GameState } from "./types/game";
 import MainMenu from "./components/MainMenu";
 import GameLayout from "./components/GameLayout";
 import CourseNotes from "./components/CourseNotes";
@@ -21,14 +21,14 @@ export default function App() {
     if (gameState.endingId) setScreen("ending");
   }, [gameState]);
 
-  const startNew = () => {
+  const startNew = (difficulty: DifficultyLevel = "gentle") => {
     clearSavedGame();
-    setGameState({ ...initialGameState, resources: { ...initialGameState.resources }, log: [...initialGameState.log] });
+    setGameState(createInitialGameState(difficulty));
     setScreen("game");
   };
 
   const resetGame = () => {
-    if (confirm("Reset the journey and clear the saved game?")) startNew();
+    if (confirm("Reset the journey and clear the saved game?")) startNew(gameState.difficulty);
   };
 
   const ending = endings.find((item) => item.id === gameState.endingId);
@@ -71,7 +71,7 @@ export default function App() {
       {screen === "game" && <GameLayout gameState={gameState} setGameState={setGameState} />}
       {screen === "notes" && <CourseNotes notes={courseNotes} gameState={gameState} />}
       {screen === "gallery" && <Gallery />}
-      {screen === "ending" && ending && <EndingScreen gameState={gameState} ending={ending} onRestart={startNew} />}
+      {screen === "ending" && ending && <EndingScreen gameState={gameState} ending={ending} onRestart={() => startNew(gameState.difficulty)} />}
     </div>
   );
 }

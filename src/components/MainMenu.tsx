@@ -1,15 +1,20 @@
 import { BookOpen, Images, Play, RotateCcw } from "lucide-react";
+import { useState } from "react";
+import { difficultySettings } from "../data/gameData";
+import type { DifficultyLevel } from "../types/game";
 
 type Props = {
   hasSave: boolean;
   stationTitle: string;
-  onStart: () => void;
+  onStart: (difficulty: DifficultyLevel) => void;
   onContinue: () => void;
   onNotes: () => void;
   onGallery: () => void;
 };
 
 export default function MainMenu({ hasSave, stationTitle, onStart, onContinue, onNotes, onGallery }: Props) {
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>("gentle");
+
   return (
     <main className="menu hero-panel">
       <section className="hero-copy">
@@ -22,7 +27,19 @@ export default function MainMenu({ hasSave, stationTitle, onStart, onContinue, o
         <p className="disclaimer">This game is a learning companion for course recall, not medical, psychological, or spiritual direction.</p>
       </section>
       <section className="menu-card glass">
-        <button className="primary action" onClick={onStart}>
+        <div className="difficulty-picker">
+          {(Object.keys(difficultySettings) as DifficultyLevel[]).map((level) => (
+            <button
+              key={level}
+              className={difficulty === level ? "selected" : ""}
+              onClick={() => setDifficulty(level)}
+            >
+              <strong>{difficultySettings[level].title}</strong>
+              <span>{difficultySettings[level].description}</span>
+            </button>
+          ))}
+        </div>
+        <button className="primary action" onClick={() => onStart(difficulty)}>
           <Play size={18} /> Start New Journey
         </button>
         <button className="action" onClick={onContinue} disabled={!hasSave}>
