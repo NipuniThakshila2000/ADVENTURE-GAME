@@ -109,6 +109,46 @@ export function redirectForMiniStoryline(choice: Choice) {
   }
 }
 
+export function isDetourChoice(choice: Choice) {
+  const totalEffect = Object.values(choice.effects).reduce((sum, value) => sum + (value ?? 0), 0);
+  return Boolean(choice.miniStorylineId) || totalEffect < 0;
+}
+
+export function getDetourQuiz(stationId: string): QuizQuestion[] {
+  const station = getStation(stationId);
+  const steadyChoices = station.choices.filter((choice) => !isDetourChoice(choice));
+  const detourChoices = station.choices.filter(isDetourChoice);
+  const firstSteady = steadyChoices[0]?.label ?? "Return to the lesson with steadiness";
+  const firstDetour = detourChoices[0]?.label ?? "React too quickly";
+
+  return [
+    {
+      question: `At ${station.title}, what posture brings you back toward stillness?`,
+      options: [firstSteady, firstDetour, "Rush ahead for a dramatic result"],
+      correctIndex: 0,
+      explanation: `The station lesson points back to this posture: ${station.lesson}`,
+      effectsCorrect: { recall: 4, clarity: 3 },
+      effectsWrong: { recall: 1, rest: -2 },
+    },
+    {
+      question: "What usually creates the detour here?",
+      options: ["Clutching, forcing, reacting, or demanding certainty", "Returning gently to the lesson", "Reviewing the station before moving"],
+      correctIndex: 0,
+      explanation: "A detour forms when the participant grabs, reacts, forces, or turns the lesson into spectacle.",
+      effectsCorrect: { discernment: 4, openness: 3 },
+      effectsWrong: { clarity: -2, focus: -2 },
+    },
+    {
+      question: `What should you remember before returning to ${station.title}?`,
+      options: [station.lesson, "The wrong turn should become the whole story", "The trail only continues through intensity"],
+      correctIndex: 0,
+      explanation: "The way back is to remember the lesson and return without making the mistake into a verdict.",
+      effectsCorrect: { recall: 5, consistency: 2 },
+      effectsWrong: { recall: 1, openness: -2 },
+    },
+  ];
+}
+
 export function applyChoice(state: GameState, choice: Choice, fromRandomEvent = false): GameState {
   const station = getStation(state.stationId);
   const note = getNoteForStation(station.id);
@@ -167,6 +207,7 @@ export function finalScore(resources: GameState["resources"], quizHistory: GameS
 }
 
 export function getChoiceDisplayLabel(choice: Choice, difficulty: DifficultyLevel, index: number) {
+  if (isDetourChoice(choice)) return "De Tour";
   if (difficulty === "gentle") return choice.label;
   if (difficulty === "narrow") return narrowChoiceLabels[choice.id] ?? choice.label;
   const fallback = ["The first movement", "The second movement", "The third movement", "The fourth movement"];

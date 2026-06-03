@@ -1,9 +1,17 @@
 import { HelpCircle } from "lucide-react";
 import type { QuizQuestion } from "../types/game";
 
-export default function QuizCard({ question, onAnswer }: { question: QuizQuestion; onAnswer: (selectedIndex: number) => void }) {
+export default function QuizCard({
+  question,
+  onAnswer,
+  compact = false,
+}: {
+  question: QuizQuestion;
+  onAnswer: (selectedIndex: number) => void;
+  compact?: boolean;
+}) {
   return (
-    <article className="glass quiz-card">
+    <article className={`${compact ? "" : "glass"} quiz-card ${compact ? "compact" : ""}`}>
       <p className="eyebrow"><HelpCircle size={16} /> Quiz Checkpoint</p>
       <h2>{question.question}</h2>
       <div className="choices">

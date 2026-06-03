@@ -506,17 +506,24 @@ button:not(:disabled):hover {
 .trail-line span {
   position: absolute;
   top: 50%;
+  display: grid;
+  place-items: center;
   width: 14px;
   height: 14px;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   border: 2px solid rgba(238, 243, 255, 0.75);
   background: #111936;
+  color: transparent;
+  font-size: 0.68rem;
+  font-weight: 900;
 }
 
 .trail-line span.active {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
+  color: #08101d;
+  background: var(--gold);
   border-color: var(--gold);
   box-shadow: 0 0 20px rgba(217, 183, 106, 0.62);
 }
@@ -665,6 +672,23 @@ p {
 
 .quiz-card {
   min-height: 360px;
+}
+
+.quiz-card.compact {
+  min-height: 0;
+  padding: 18px 0 0;
+}
+
+.detour-card h2 {
+  color: #f4dc97;
+}
+
+.trail-return {
+  padding: 18px;
+}
+
+.trail-return h2 {
+  color: var(--success);
 }
 
 .notes-grid,
