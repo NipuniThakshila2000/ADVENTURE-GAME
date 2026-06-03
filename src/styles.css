@@ -36,7 +36,7 @@ button {
 .app-shell {
   position: relative;
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
   padding: 22px;
 }
 
@@ -781,10 +781,13 @@ code {
   .tutorial-callout.right,
   .tutorial-callout.top,
   .tutorial-callout.bottom {
+    position: relative;
     left: 0;
     right: auto;
-    top: calc(100% + 18px);
+    top: auto;
     bottom: auto;
+    width: 100%;
+    margin-top: 16px;
     transform: none;
   }
 
@@ -792,11 +795,15 @@ code {
   .tutorial-callout.right .tutorial-arrow,
   .tutorial-callout.top .tutorial-arrow,
   .tutorial-callout.bottom .tutorial-arrow {
-    left: 22px;
+    left: 20px;
     right: auto;
     top: -32px;
     bottom: auto;
     transform: rotate(-90deg);
+  }
+
+  .tour-target.active {
+    margin-bottom: 18px;
   }
 }
 
