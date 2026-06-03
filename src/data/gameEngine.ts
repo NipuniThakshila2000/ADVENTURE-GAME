@@ -207,7 +207,6 @@ export function finalScore(resources: GameState["resources"], quizHistory: GameS
 }
 
 export function getChoiceDisplayLabel(choice: Choice, difficulty: DifficultyLevel, index: number) {
-  if (isDetourChoice(choice)) return "De Tour";
   if (difficulty === "gentle") return choice.label;
   if (difficulty === "narrow") return narrowChoiceLabels[choice.id] ?? choice.label;
   const fallback = ["The first movement", "The second movement", "The third movement", "The fourth movement"];
