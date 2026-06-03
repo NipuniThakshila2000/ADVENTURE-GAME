@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Music, Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 
 type Mood = "peaceful" | "dark";
 
@@ -121,10 +121,6 @@ export default function AmbientSound({ stationId }: { stationId: string }) {
         {enabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
         <span>{enabled ? "Music On" : "Music Off"}</span>
       </button>
-      <span className={`mood-pill ${mood}`}>
-        <Music size={14} />
-        {mood === "peaceful" ? "Peaceful Music" : "Dark Music"}
-      </span>
     </div>
   );
 }
