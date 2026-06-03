@@ -83,15 +83,11 @@ button {
   font-weight: 700;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(217,183,106,0.32), rgba(111,166,167,0.28));
-  color: #fff8de;
-  font-size: 0.8rem;
+.brand-logo {
+  display: block;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
 }
 
 .topbar nav {
@@ -165,6 +161,13 @@ button:not(:disabled):hover {
     radial-gradient(circle at 60% 20%, rgba(217, 183, 106, 0.22), transparent 26rem),
     radial-gradient(circle at 30% 70%, rgba(111, 166, 167, 0.3), transparent 24rem);
   border: 1px solid var(--panel-border);
+}
+
+.hero-logo {
+  display: block;
+  width: min(220px, 48vw);
+  height: auto;
+  margin: 0 0 20px;
 }
 
 .hero-copy h1,

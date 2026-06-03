@@ -39,7 +39,7 @@ export default function App() {
       <div className="stars" />
       <header className="topbar">
         <button className="brand" onClick={() => setScreen("menu")}>
-          <span className="brand-mark">CMS</span>
+          <img className="brand-logo" src="/images/cms-redux-logo.png" alt="CMS Redux" />
           <span>Redux Trail</span>
         </button>
         <nav>

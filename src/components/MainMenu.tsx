@@ -18,6 +18,7 @@ export default function MainMenu({ hasSave, stationTitle, onStart, onContinue, o
   return (
     <main className="menu hero-panel">
       <section className="hero-copy">
+        <img className="hero-logo" src="/images/cms-redux-logo.png" alt="CMS Redux" />
         <p className="eyebrow">90 days · 20 minutes daily · course recall</p>
         <h1>CMS Redux Trail: The Tohu Journey</h1>
         <p>
