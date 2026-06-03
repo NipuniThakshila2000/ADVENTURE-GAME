@@ -4,7 +4,6 @@ import { Music, Volume2, VolumeX } from "lucide-react";
 type Mood = "peaceful" | "dark";
 
 type Track = {
-  title: string;
   src: string;
   mood: Mood;
 };
@@ -12,13 +11,13 @@ type Track = {
 const musicEnabledKey = "cms-redux-music-enabled";
 
 const tracks: Track[] = [
-  { title: "Alonia", src: "/sounds/alonia.mp3", mood: "peaceful" },
-  { title: "Calming Crystals", src: "/sounds/calming-crystals.mp3", mood: "peaceful" },
-  { title: "Edge of Ocean Reefs", src: "/sounds/edge-ocean-reefs.mp3", mood: "peaceful" },
-  { title: "Margin", src: "/sounds/margin.mp3", mood: "peaceful" },
-  { title: "Woodwind Reviere", src: "/sounds/woodwind-reviere.mp3", mood: "peaceful" },
-  { title: "Dark Secrets", src: "/sounds/dark-secrets.mp3", mood: "dark" },
-  { title: "How Did We Get Here", src: "/sounds/how-did-we-get-here.mp3", mood: "dark" },
+  { src: "/sounds/alonia.mp3", mood: "peaceful" },
+  { src: "/sounds/calming-crystals.mp3", mood: "peaceful" },
+  { src: "/sounds/edge-ocean-reefs.mp3", mood: "peaceful" },
+  { src: "/sounds/margin.mp3", mood: "peaceful" },
+  { src: "/sounds/woodwind-reviere.mp3", mood: "peaceful" },
+  { src: "/sounds/dark-secrets.mp3", mood: "dark" },
+  { src: "/sounds/how-did-we-get-here.mp3", mood: "dark" },
 ];
 
 const stationMood: Record<string, Mood> = {
@@ -58,9 +57,9 @@ function fadeAudio(audio: HTMLAudioElement, target: number, duration = 1800, onD
 }
 
 export default function AmbientSound({ stationId }: { stationId: string }) {
-  const [enabled, setEnabled] = useState(() => localStorage.getItem(musicEnabledKey) === "true");
+  const [enabled, setEnabled] = useState(() => localStorage.getItem(musicEnabledKey) !== "false");
   const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
-  const [currentTitle, setCurrentTitle] = useState("Music ready");
+  const [unlockAttempt, setUnlockAttempt] = useState(0);
   const audioARef = useRef<HTMLAudioElement>(null);
   const audioBRef = useRef<HTMLAudioElement>(null);
 
@@ -74,9 +73,19 @@ export default function AmbientSound({ stationId }: { stationId: string }) {
         if (!ref.current) return;
         fadeAudio(ref.current, 0, 500, () => ref.current?.pause());
       });
-      setCurrentTitle("Music off");
     }
   }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const retryAudio = () => setUnlockAttempt((value) => value + 1);
+    window.addEventListener("pointerdown", retryAudio, { once: true });
+    window.addEventListener("keydown", retryAudio, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", retryAudio);
+      window.removeEventListener("keydown", retryAudio);
+    };
+  }, [enabled, track]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -96,13 +105,9 @@ export default function AmbientSound({ stationId }: { stationId: string }) {
         fadeAudio(next, 0.42);
         if (current) fadeAudio(current, 0, 1800, () => current.pause());
         setActiveSlot(nextSlot);
-        setCurrentTitle(track.title);
       })
-      .catch(() => {
-        setEnabled(false);
-        setCurrentTitle("Click to start music");
-      });
-  }, [track, enabled]);
+      .catch(() => undefined);
+  }, [track, enabled, unlockAttempt]);
 
   const toggleMusic = () => {
     setEnabled((value) => !value);
@@ -118,7 +123,7 @@ export default function AmbientSound({ stationId }: { stationId: string }) {
       </button>
       <span className={`mood-pill ${mood}`}>
         <Music size={14} />
-        {mood === "peaceful" ? "Peaceful" : "Dark"} - {currentTitle}
+        {mood === "peaceful" ? "Peaceful Music" : "Dark Music"}
       </span>
     </div>
   );
