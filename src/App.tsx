@@ -8,6 +8,7 @@ import GameLayout from "./components/GameLayout";
 import CourseNotes from "./components/CourseNotes";
 import Gallery from "./components/Gallery";
 import EndingScreen from "./components/EndingScreen";
+import AmbientSound from "./components/AmbientSound";
 
 type Screen = "menu" | "game" | "notes" | "gallery" | "ending";
 export type TutorialStep = "difficulty" | "start" | "choice" | "resources" | "recap" | "log";
@@ -74,6 +75,7 @@ export default function App() {
           </button>
         </nav>
       </header>
+      <AmbientSound stationId={currentStation.id} />
 
       {screen === "menu" && (
         <MainMenu
