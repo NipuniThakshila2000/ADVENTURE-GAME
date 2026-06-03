@@ -8,8 +8,6 @@ type Track = {
   mood: Mood;
 };
 
-const musicEnabledKey = "cms-redux-music-enabled";
-
 const tracks: Track[] = [
   { src: "/sounds/alonia.mp3", mood: "peaceful" },
   { src: "/sounds/calming-crystals.mp3", mood: "peaceful" },
@@ -57,7 +55,7 @@ function fadeAudio(audio: HTMLAudioElement, target: number, duration = 1800, onD
 }
 
 export default function AmbientSound({ stationId }: { stationId: string }) {
-  const [enabled, setEnabled] = useState(() => localStorage.getItem(musicEnabledKey) !== "false");
+  const [enabled, setEnabled] = useState(true);
   const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
   const [unlockAttempt, setUnlockAttempt] = useState(0);
   const audioARef = useRef<HTMLAudioElement>(null);
@@ -67,7 +65,6 @@ export default function AmbientSound({ stationId }: { stationId: string }) {
   const track = useMemo(() => selectTrack(mood, stationId), [mood, stationId]);
 
   useEffect(() => {
-    localStorage.setItem(musicEnabledKey, String(enabled));
     if (!enabled) {
       [audioARef, audioBRef].forEach((ref) => {
         if (!ref.current) return;
