@@ -56,6 +56,13 @@ export default function GameLayout({ gameState, setGameState, tutorialStep, setT
     }
     const choice = station.choices.find((item) => item.id === choiceId);
     if (!choice) return;
+    if (tutorialStep === "choice") {
+      const next = applyChoice(gameState, { ...choice, nextStationId: station.id });
+      commitState(next);
+      setQuizIndex(0);
+      setTutorialStep("resources");
+      return;
+    }
     if (isDetourChoice(choice)) {
       const marker = Math.max(1, stations.findIndex((item) => item.id === station.id) + 1);
       const resources = applyChoice({ ...gameState, stationId: station.id }, { ...choice, nextStationId: station.id }, true).resources;
@@ -71,7 +78,6 @@ export default function GameLayout({ gameState, setGameState, tutorialStep, setT
     const next = applyChoice(gameState, choice);
     commitState(next);
     setQuizIndex(0);
-    if (tutorialStep === "choice") setTutorialStep("resources");
     if (!next.endingId && shouldTriggerRandomEvent(next)) setEvent(pickRandomEvent(next));
   };
 
