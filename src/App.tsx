@@ -9,9 +9,8 @@ import CourseNotes from "./components/CourseNotes";
 import Gallery from "./components/Gallery";
 import EndingScreen from "./components/EndingScreen";
 import AmbientSound from "./components/AmbientSound";
-import TutorialMission from "./components/TutorialMission";
 
-type Screen = "menu" | "game" | "notes" | "gallery" | "ending" | "tutorial";
+type Screen = "menu" | "game" | "notes" | "gallery" | "ending";
 export type TutorialStep = "difficulty" | "start" | "choice" | "resources" | "recap" | "log";
 
 const introSeenKey = "cms-redux-intro-seen";
@@ -46,8 +45,8 @@ export default function App() {
 
   const startTutorial = () => {
     closeIntro();
-    setTutorialStep(null);
-    setScreen("tutorial");
+    setScreen("menu");
+    setTutorialStep("difficulty");
   };
 
   const ending = endings.find((item) => item.id === gameState.endingId);
@@ -103,7 +102,6 @@ export default function App() {
       {screen === "notes" && <CourseNotes notes={courseNotes} gameState={gameState} />}
       {screen === "gallery" && <Gallery />}
       {screen === "ending" && ending && <EndingScreen gameState={gameState} ending={ending} onRestart={() => startNew(gameState.difficulty)} />}
-      {screen === "tutorial" && <TutorialMission onExit={() => setScreen("menu")} />}
 
       {showIntro && (
         <div className="intro-overlay" role="dialog" aria-modal="true" aria-labelledby="intro-title">
