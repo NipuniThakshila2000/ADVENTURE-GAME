@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Images, Play, RotateCcw } from "lucide-react";
+import { BookOpen, Images, LogOut, Play, RotateCcw } from "lucide-react";
 import { courseNotes, createInitialGameState, endings, getStation, initialGameState } from "./data/gameData";
-import { clearSavedGame, getSavedGame, saveGame } from "./data/gameEngine";
+import { clearSavedGame, getSavedGame, normalizeGameState, saveGame } from "./data/gameEngine";
 import type { DifficultyLevel, GameState } from "./types/game";
 import MainMenu from "./components/MainMenu";
 import GameLayout from "./components/GameLayout";
@@ -9,6 +9,16 @@ import CourseNotes from "./components/CourseNotes";
 import Gallery from "./components/Gallery";
 import EndingScreen from "./components/EndingScreen";
 import AmbientSound from "./components/AmbientSound";
+import AuthScreen from "./components/AuthScreen";
+import {
+  AuthUser,
+  clearAuthToken,
+  clearRemoteGame,
+  getAuthToken,
+  getCurrentUser,
+  getRemoteSave,
+  saveRemoteGame,
+} from "./api/auth";
 
 type Screen = "menu" | "game" | "notes" | "gallery" | "ending";
 export type TutorialStep = "difficulty" | "start" | "choice" | "resources" | "recap" | "log";
@@ -16,19 +26,77 @@ export type TutorialStep = "difficulty" | "start" | "choice" | "resources" | "re
 const introSeenKey = "cms-redux-intro-seen";
 
 export default function App() {
-  const [gameState, setGameState] = useState<GameState>(() => getSavedGame() ?? initialGameState);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(() => Boolean(getAuthToken()));
+  const [saveHydrated, setSaveHydrated] = useState(false);
+  const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [screen, setScreen] = useState<Screen>("menu");
   const [showIntro, setShowIntro] = useState(() => localStorage.getItem(introSeenKey) !== "true");
   const [tutorialStep, setTutorialStep] = useState<TutorialStep | null>(null);
-  const hasSave = useMemo(() => Boolean(getSavedGame()), [gameState]);
+  const [hasRemoteSave, setHasRemoteSave] = useState(false);
+  const hasSave = useMemo(() => hasRemoteSave || Boolean(gameState.completedStations.length) || gameState.stationId !== initialGameState.stationId, [gameState, hasRemoteSave]);
 
   useEffect(() => {
+    if (!getAuthToken()) {
+      setIsAuthLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    Promise.all([getCurrentUser(), getRemoteSave()])
+      .then(([currentUser, remoteSave]) => {
+        if (!isMounted) return;
+        setUser(currentUser);
+        setGameState(remoteSave ? normalizeGameState(remoteSave) : initialGameState);
+        setHasRemoteSave(Boolean(remoteSave));
+        if (remoteSave?.endingId) setScreen("ending");
+      })
+      .catch(() => {
+        clearAuthToken();
+        if (!isMounted) return;
+        setUser(null);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setSaveHydrated(true);
+        setIsAuthLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user || !saveHydrated) return;
     saveGame(gameState);
+    setHasRemoteSave(true);
+    void saveRemoteGame(gameState);
     if (gameState.endingId) setScreen("ending");
-  }, [gameState]);
+  }, [gameState, saveHydrated, user]);
+
+  const handleAuthenticated = async (authenticatedUser: AuthUser) => {
+    setUser(authenticatedUser);
+    setIsAuthLoading(true);
+    try {
+      const remoteSave = await getRemoteSave();
+      const localSave = getSavedGame();
+      const nextSave = remoteSave ?? localSave ?? initialGameState;
+      setGameState(normalizeGameState(nextSave));
+      setHasRemoteSave(Boolean(remoteSave ?? localSave));
+      if (!remoteSave && localSave) await saveRemoteGame(localSave);
+      if (nextSave.endingId) setScreen("ending");
+      else setScreen("menu");
+    } finally {
+      setSaveHydrated(true);
+      setIsAuthLoading(false);
+    }
+  };
 
   const startNew = (difficulty: DifficultyLevel = "gentle") => {
     clearSavedGame();
+    void clearRemoteGame();
+    setHasRemoteSave(false);
     setGameState(createInitialGameState(difficulty));
     setScreen("game");
     if (tutorialStep === "start") setTutorialStep("choice");
@@ -49,8 +117,35 @@ export default function App() {
     setTutorialStep("difficulty");
   };
 
+  const logout = () => {
+    clearAuthToken();
+    setUser(null);
+    setSaveHydrated(false);
+    setHasRemoteSave(false);
+    setGameState(initialGameState);
+    setScreen("menu");
+  };
+
   const ending = endings.find((item) => item.id === gameState.endingId);
   const currentStation = getStation(gameState.stationId);
+
+  if (isAuthLoading) {
+    return (
+      <div className="app-shell">
+        <div className="stars" />
+        <main className="loading-panel glass">Loading your account...</main>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="app-shell">
+        <div className="stars" />
+        <AuthScreen onAuthenticated={handleAuthenticated} />
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -73,8 +168,12 @@ export default function App() {
           <button onClick={resetGame}>
             <RotateCcw size={16} /> Reset
           </button>
+          <button onClick={logout}>
+            <LogOut size={16} /> Sign Out
+          </button>
         </nav>
       </header>
+      <p className="user-chip">Signed in as {user.name}</p>
       <AmbientSound stationId={currentStation.id} />
 
       {screen === "menu" && (
