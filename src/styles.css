@@ -1,18 +1,18 @@
 :root {
-  --bg: #080d1c;
-  --panel: rgba(18, 25, 48, 0.72);
-  --panel-strong: rgba(22, 31, 60, 0.88);
-  --panel-border: rgba(255, 255, 255, 0.12);
-  --text: #eef3ff;
-  --muted: #aeb8d4;
-  --gold: #d9b76a;
-  --violet: #776d9e;
-  --teal: #6fa6a7;
-  --danger: #d97979;
-  --success: #8bcfba;
+  --bg: #e8ddc6;
+  --panel: rgba(246, 238, 219, 0.84);
+  --panel-strong: rgba(237, 226, 203, 0.95);
+  --panel-border: rgba(93, 76, 55, 0.24);
+  --text: #2f281f;
+  --muted: #6d6354;
+  --gold: #9c7a39;
+  --violet: #6f756f;
+  --teal: #697d7d;
+  --danger: #8d4b42;
+  --success: #627c69;
   color: var(--text);
   background: var(--bg);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Georgia, "Times New Roman", ui-serif, serif;
 }
 
 * {
@@ -24,9 +24,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 18% 10%, rgba(119, 109, 158, 0.34), transparent 30rem),
-    radial-gradient(circle at 80% 20%, rgba(111, 166, 167, 0.22), transparent 28rem),
-    linear-gradient(160deg, #080d1c 0%, #101832 48%, #07101d 100%);
+    radial-gradient(circle at 18% 8%, rgba(255, 247, 220, 0.72), transparent 28rem),
+    radial-gradient(circle at 82% 16%, rgba(121, 139, 139, 0.2), transparent 30rem),
+    linear-gradient(160deg, #f1e8d5 0%, #d8c9ad 48%, #c3b08d 100%);
 }
 
 button {
@@ -44,12 +44,14 @@ button {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.46;
+  opacity: 0.42;
   background-image:
-    radial-gradient(circle, rgba(255,255,255,0.74) 0 1px, transparent 1px),
-    radial-gradient(circle, rgba(217,183,106,0.5) 0 1px, transparent 1px);
-  background-size: 74px 74px, 127px 127px;
-  mask-image: linear-gradient(to bottom, black, transparent 85%);
+    linear-gradient(rgba(93, 76, 55, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(93, 76, 55, 0.06) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255, 248, 225, 0.44) 0 1px, transparent 1px);
+  background-size: 42px 42px, 42px 42px, 118px 118px;
+  mix-blend-mode: multiply;
+  mask-image: linear-gradient(to bottom, black, transparent 92%);
 }
 
 .topbar {
@@ -876,6 +878,157 @@ p {
 
 code {
   color: #f4dc97;
+}
+
+/* Parchment cloister theme overrides */
+.brand,
+.topbar nav button,
+.action,
+.choice-button,
+.ambient-player button,
+.auth-tabs button,
+.difficulty-picker button {
+  background: rgba(255, 248, 230, 0.52);
+}
+
+.brand,
+.topbar nav button,
+.action,
+.choice-button,
+.ambient-player button {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+.ambient-player button.enabled,
+.difficulty-picker button.selected {
+  border-color: rgba(156, 122, 57, 0.62);
+  background: rgba(156, 122, 57, 0.14);
+  box-shadow: 0 10px 28px rgba(93, 76, 55, 0.12);
+}
+
+button:not(:disabled):hover {
+  border-color: rgba(112, 84, 45, 0.62);
+  background: rgba(255, 248, 230, 0.82);
+  box-shadow: 0 12px 28px rgba(80, 63, 42, 0.16);
+}
+
+.primary,
+.auth-tabs button.selected,
+.tutorial-next {
+  color: #fff7e3;
+  border-color: rgba(94, 68, 34, 0.72);
+  background: linear-gradient(135deg, #7a5b2e, #6b7772);
+}
+
+.glass {
+  background:
+    linear-gradient(rgba(255, 249, 235, 0.08), rgba(185, 165, 129, 0.08)),
+    var(--panel);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 70px rgba(76, 58, 38, 0.18);
+}
+
+.auth-form input {
+  background: rgba(255, 250, 237, 0.76);
+}
+
+.auth-form input:focus {
+  border-color: rgba(156, 122, 57, 0.72);
+  box-shadow: 0 0 0 3px rgba(156, 122, 57, 0.14);
+}
+
+.auth-error {
+  color: #5e2d27;
+  background: rgba(141, 75, 66, 0.12);
+}
+
+.hero-copy {
+  background:
+    linear-gradient(rgba(250, 242, 222, 0.5), rgba(210, 191, 154, 0.8)),
+    radial-gradient(circle at 70% 22%, rgba(156, 122, 57, 0.18), transparent 24rem),
+    radial-gradient(circle at 22% 80%, rgba(105, 125, 125, 0.24), transparent 24rem);
+}
+
+.hero-copy h1,
+.auth-hero h1,
+.page-heading h1,
+.ending-page h1 {
+  color: #2b251d;
+  text-shadow: 0 1px 0 rgba(255, 250, 235, 0.55);
+}
+
+.disclaimer {
+  color: #4e4333;
+}
+
+.intro-overlay {
+  background: rgba(63, 49, 33, 0.45);
+}
+
+.intro-warning,
+.tutorial-callout strong,
+.lesson-line,
+.memory,
+code {
+  color: #765424;
+}
+
+.tour-target.active::before {
+  border-color: rgba(156, 122, 57, 0.86);
+  box-shadow: 0 0 0 9999px rgba(63, 49, 33, 0.38), 0 0 32px rgba(156, 122, 57, 0.22);
+}
+
+.tutorial-callout {
+  border-color: rgba(156, 122, 57, 0.52);
+  background: rgba(246, 238, 219, 0.96);
+  box-shadow: 0 22px 52px rgba(76, 58, 38, 0.24);
+}
+
+.tutorial-arrow {
+  color: #765424;
+  filter: drop-shadow(0 0 12px rgba(156, 122, 57, 0.38));
+}
+
+.trail-line,
+.bar {
+  background: rgba(93, 76, 55, 0.14);
+}
+
+.trail-line span {
+  border-color: rgba(246, 238, 219, 0.85);
+  background: #6f6758;
+}
+
+.trail-line span.active {
+  color: #fff7e3;
+  box-shadow: 0 0 20px rgba(156, 122, 57, 0.44);
+}
+
+.scene {
+  min-height: clamp(330px, 46vw, 620px);
+  background-color: #d6c5a4;
+  border-bottom: 1px solid rgba(93, 76, 55, 0.2);
+}
+
+.scene::before {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 248, 225, 0.12), transparent 18rem),
+    linear-gradient(160deg, rgba(68, 52, 34, 0.01), rgba(62, 46, 29, 0.14));
+}
+
+.scene-fallback span {
+  color: rgba(47, 40, 31, 0.84);
+}
+
+.choice-button,
+.ending-lists section {
+  background: rgba(255, 248, 230, 0.5);
+}
+
+.difficulty-badge {
+  color: #765424;
+  border-color: rgba(156, 122, 57, 0.42);
+  background: rgba(156, 122, 57, 0.1);
 }
 
 @media (max-width: 980px) {
