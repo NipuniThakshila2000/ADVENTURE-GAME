@@ -33,8 +33,9 @@ Open the Vite URL shown by `npm run dev`. The frontend proxies `/api` requests t
 
 The app now includes a Node auth server backed by PostgreSQL. Set `DATABASE_URL` before starting the server. The server creates the required tables automatically on startup.
 
-- Users can register and sign in with email and password.
-- Passwords are salted and hashed with Node's built-in `scrypt`.
+- Users sign in with email only.
+- Access is limited to the member email allowlist in `server/allowedMembers.js`.
+- Approved members are created automatically on first sign-in.
 - Signed bearer tokens keep users authenticated.
 - Each user's journey progress is saved through `/api/save`.
 - User account data is stored in the `users` table.

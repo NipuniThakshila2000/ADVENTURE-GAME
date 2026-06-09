@@ -1,9 +1,10 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { createReadStream, existsSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createServer } from "node:http";
 import pg from "pg";
+import { allowedMembers } from "./allowedMembers.js";
 
 const port = Number(process.env.PORT ?? 3001);
 const jwtSecret = process.env.AUTH_SECRET ?? "change-this-secret-before-production";
@@ -18,6 +19,7 @@ const pool = databaseUrl
     })
   : null;
 let initPromise = null;
+const allowedMembersByEmail = new Map(allowedMembers.map((member) => [normalizeEmail(member.email), member]));
 
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
 const mimeTypes = {
@@ -64,7 +66,7 @@ async function ensureDatabaseReady() {
 async function getUserById(userId) {
   if (!pool || !userId) return null;
   const result = await pool.query(
-    "SELECT id, name, email, password_hash AS \"passwordHash\" FROM users WHERE id = $1",
+    "SELECT id, name, email FROM users WHERE id = $1",
     [userId],
   );
   return result.rows[0] ?? null;
@@ -73,20 +75,20 @@ async function getUserById(userId) {
 async function getUserByEmail(email) {
   if (!pool) return null;
   const result = await pool.query(
-    "SELECT id, name, email, password_hash AS \"passwordHash\" FROM users WHERE email = $1",
+    "SELECT id, name, email FROM users WHERE email = $1",
     [email],
   );
   return result.rows[0] ?? null;
 }
 
-async function createUser({ name, email, passwordHash }) {
+async function createUser({ name, email }) {
   if (!pool) throw new Error("Database is not configured.");
   const userId = randomBytes(16).toString("hex");
   const result = await pool.query(
     `INSERT INTO users (id, name, email, password_hash)
      VALUES ($1, $2, $3, $4)
      RETURNING id, name, email`,
-    [userId, name, email, passwordHash],
+    [userId, name, email, "allowlist"],
   );
   await pool.query("INSERT INTO game_saves (user_id, game_state) VALUES ($1, $2)", [userId, null]);
   return result.rows[0];
@@ -142,20 +144,6 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function hashPassword(password) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
-
-function verifyPassword(password, passwordHash) {
-  const [salt, storedHash] = String(passwordHash).split(":");
-  if (!salt || !storedHash) return false;
-  const hashedBuffer = Buffer.from(scryptSync(password, salt, 64).toString("hex"), "hex");
-  const storedBuffer = Buffer.from(storedHash, "hex");
-  return storedBuffer.length === hashedBuffer.length && timingSafeEqual(storedBuffer, hashedBuffer);
-}
-
 function base64Url(value) {
   return Buffer.from(value).toString("base64url");
 }
@@ -206,40 +194,17 @@ async function handleApi(request, response) {
   try {
     await ensureDatabaseReady();
 
-    if (request.method === "POST" && request.url === "/api/auth/register") {
-      const body = await readJson(request);
-      const email = normalizeEmail(body.email);
-      const name = String(body.name ?? "").trim();
-      const password = String(body.password ?? "");
-
-      if (!name || name.length < 2) return sendJson(response, 400, { error: "Name must be at least 2 characters." });
-      if (!isValidEmail(email)) return sendJson(response, 400, { error: "Enter a valid email address." });
-      if (password.length < 8) return sendJson(response, 400, { error: "Password must be at least 8 characters." });
-
-      const existingUser = await getUserByEmail(email);
-      if (existingUser) {
-        return sendJson(response, 409, { error: "An account already exists for that email." });
-      }
-
-      const user = await createUser({
-        name,
-        email,
-        passwordHash: hashPassword(password),
-      });
-
-      return sendJson(response, 201, { token: signToken(user.id), user: publicUser(user) });
-    }
-
     if (request.method === "POST" && request.url === "/api/auth/login") {
       const body = await readJson(request);
       const email = normalizeEmail(body.email);
-      const password = String(body.password ?? "");
-      const user = await getUserByEmail(email);
+      if (!isValidEmail(email)) return sendJson(response, 400, { error: "Enter a valid email address." });
 
-      if (!user || !verifyPassword(password, user.passwordHash)) {
-        return sendJson(response, 401, { error: "Email or password is incorrect." });
+      const allowedMember = allowedMembersByEmail.get(email);
+      if (!allowedMember) {
+        return sendJson(response, 403, { error: "This email is not approved for member access." });
       }
 
+      const user = (await getUserByEmail(email)) ?? (await createUser({ name: allowedMember.name || email, email }));
       return sendJson(response, 200, { token: signToken(user.id), user: publicUser(user) });
     }
 

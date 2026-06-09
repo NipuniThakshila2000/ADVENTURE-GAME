@@ -40,16 +40,7 @@ async function requestJson<T>(path: string, options: RequestInit = {}): Promise<
   return payload as T;
 }
 
-export async function registerUser(input: { name: string; email: string; password: string }) {
-  const result = await requestJson<AuthResponse>("/api/auth/register", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-  setAuthToken(result.token);
-  return result.user;
-}
-
-export async function loginUser(input: { email: string; password: string }) {
+export async function loginUser(input: { email: string }) {
   const result = await requestJson<AuthResponse>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify(input),

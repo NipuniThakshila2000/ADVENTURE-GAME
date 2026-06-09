@@ -4,6 +4,7 @@ dist/
 
 *.log
 *.tsbuildinfo
+*.xlsx
 
 .env
 .env.*
