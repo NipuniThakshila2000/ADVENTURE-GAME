@@ -13,6 +13,16 @@ type AuthResponse = {
   user: AuthUser;
 };
 
+export class ApiError extends Error {
+  code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+  }
+}
+
 export function getAuthToken() {
   return localStorage.getItem(tokenKey);
 }
@@ -35,8 +45,8 @@ async function requestJson<T>(path: string, options: RequestInit = {}): Promise<
       ...options.headers,
     },
   });
-  const payload = (await response.json().catch(() => ({}))) as { error?: string };
-  if (!response.ok) throw new Error(payload.error ?? "Request failed.");
+  const payload = (await response.json().catch(() => ({}))) as { error?: string; code?: string };
+  if (!response.ok) throw new ApiError(payload.error ?? "Request failed.", payload.code);
   return payload as T;
 }
 

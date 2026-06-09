@@ -1,24 +1,32 @@
 import { LogIn } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { AuthUser, loginUser } from "../api/auth";
+import { ApiError, AuthUser, loginUser } from "../api/auth";
 
 type Props = {
   onAuthenticated: (user: AuthUser) => void;
 };
 
+const joinUrl =
+  "https://wowlifeworld.net/landing?from=https%3A%2F%2Fwowlifeworld.net%2Fplans%2F1973670%3Fbundle_token%3Df877d02dc91405c16000e38cd734fdc3%26utm_source%3Dmanual";
+
 export default function AuthScreen({ onAuthenticated }: Props) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [isMemberError, setIsMemberError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
+    setIsMemberError(false);
     setIsSubmitting(true);
     try {
       const user = await loginUser({ email });
       onAuthenticated(user);
     } catch (caught) {
+      if (caught instanceof ApiError && caught.code === "member_not_found") {
+        setIsMemberError(true);
+      }
       setError(caught instanceof Error ? caught.message : "Authentication failed.");
     } finally {
       setIsSubmitting(false);
@@ -39,7 +47,23 @@ export default function AuthScreen({ onAuthenticated }: Props) {
             Email
             <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" required />
           </label>
-          {error && <p className="auth-error">{error}</p>}
+          {isMemberError ? (
+            <div className="auth-error member-error">
+              <p>Hi! It looks like you&rsquo;re not currently a member of WOWLife Deep Dives.</p>
+              <p>
+                No worries — you can join here:{" "}
+                <a href={joinUrl} target="_blank" rel="noreferrer">
+                  Link
+                </a>
+              </p>
+              <p>
+                If you&rsquo;re already a member, you may be using a different email address. Please try logging in with
+                the same email you used to register on Mighty Networks, and everything should work smoothly.
+              </p>
+            </div>
+          ) : (
+            error && <p className="auth-error">{error}</p>
+          )}
           <button className="primary action" disabled={isSubmitting} type="submit">
             <LogIn size={18} />
             {isSubmitting ? "Please wait..." : "Sign In"}

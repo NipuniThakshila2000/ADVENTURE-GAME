@@ -201,7 +201,7 @@ async function handleApi(request, response) {
 
       const allowedMember = allowedMembersByEmail.get(email);
       if (!allowedMember) {
-        return sendJson(response, 403, { error: "This email is not approved for member access." });
+        return sendJson(response, 403, { error: "This email is not approved for member access.", code: "member_not_found" });
       }
 
       const user = (await getUserByEmail(email)) ?? (await createUser({ name: allowedMember.name || email, email }));

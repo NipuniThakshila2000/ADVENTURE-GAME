@@ -948,6 +948,22 @@ button:not(:disabled):hover {
   background: rgba(141, 75, 66, 0.12);
 }
 
+.member-error {
+  display: grid;
+  gap: 8px;
+}
+
+.member-error p {
+  margin: 0;
+}
+
+.member-error a {
+  color: #5e2d27;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .hero-copy {
   background:
     linear-gradient(rgba(250, 242, 222, 0.5), rgba(210, 191, 154, 0.8)),
