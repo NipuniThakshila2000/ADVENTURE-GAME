@@ -1,3 +1,7 @@
-images/
-Sounds/
-CMS  REDUX logo NG.png
+/images/
+/Sounds/
+/CMS  REDUX logo NG.png
+!/public/images/
+!/public/images/**
+!/public/sounds/
+!/public/sounds/**
