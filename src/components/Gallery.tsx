@@ -11,9 +11,7 @@ export default function Gallery() {
       <section className="gallery-grid">
         {stations.map((station) => (
           <article className="glass gallery-item" key={station.id}>
-            <div className="scene small-scene" style={{ backgroundImage: `url(/images/${station.imageKey}.png)` }}>
-              <div className="scene-fallback"><span>{station.title}</span></div>
-            </div>
+            <div className="scene small-scene" style={{ backgroundImage: `url(/images/${station.imageKey}.png)` }} />
             <h2>{station.title}</h2>
             <p>{station.subtitle}</p>
           </article>

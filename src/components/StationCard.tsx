@@ -20,11 +20,7 @@ export default function StationCard({
 }) {
   return (
     <article className="glass station-card">
-      <div className="scene" style={{ backgroundImage: `url(/images/${imageKey}.png)` }}>
-        <div className="scene-fallback">
-          <span>{isEvent ? "Trail Event" : stationLike.title}</span>
-        </div>
-      </div>
+      <div className="scene" style={{ backgroundImage: `url(/images/${imageKey}.png)` }} />
       <div className="station-content">
         <p className="eyebrow">{isEvent ? "Random Event" : stationLike.subtitle}</p>
         <h2>{stationLike.title}</h2>
