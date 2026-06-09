@@ -6,7 +6,6 @@ export default function Gallery() {
       <section className="page-heading glass">
         <p className="eyebrow">Scene Gallery</p>
         <h1>Image Gallery</h1>
-        <p>Place generated scene files in <code>public/images</code>. Missing files fall back to luminous CSS scene panels.</p>
       </section>
       <section className="gallery-grid">
         {stations.map((station) => (
