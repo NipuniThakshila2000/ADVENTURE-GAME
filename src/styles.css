@@ -915,9 +915,15 @@ button:not(:disabled):hover {
 .primary,
 .auth-tabs button.selected,
 .tutorial-next {
-  color: #fff7e3;
+  color: #2f281f;
   border-color: rgba(94, 68, 34, 0.72);
-  background: linear-gradient(135deg, #7a5b2e, #6b7772);
+  background: linear-gradient(135deg, #ead18a, #8bcfba);
+}
+
+.primary:not(:disabled):hover {
+  color: #2f281f;
+  border-color: rgba(94, 68, 34, 0.78);
+  background: linear-gradient(135deg, #f1dc9a, #9bdcc8);
 }
 
 .glass {
@@ -1023,6 +1029,11 @@ code {
 .choice-button,
 .ending-lists section {
   background: rgba(255, 248, 230, 0.5);
+}
+
+.detour-card h2,
+.detour-card .quiz-card h2 {
+  color: #2f281f;
 }
 
 .difficulty-badge {
