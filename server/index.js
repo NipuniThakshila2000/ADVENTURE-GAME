@@ -9,6 +9,9 @@ import { allowedMembers } from "./allowedMembers.js";
 const port = Number(process.env.PORT ?? 3001);
 const jwtSecret = process.env.AUTH_SECRET ?? "change-this-secret-before-production";
 const databaseUrl = process.env.DATABASE_URL;
+const googleSheetCsvUrl = process.env.GOOGLE_SHEET_CSV_URL;
+const memberRefreshMs = Number(process.env.MEMBER_REFRESH_MS ?? 60_000);
+const useLocalAllowlistFallback = !googleSheetCsvUrl && process.env.NODE_ENV !== "production";
 const rootDir = resolve(process.cwd());
 const distDir = join(rootDir, "dist");
 const useSsl = process.env.DATABASE_SSL === "true" || process.env.NODE_ENV === "production";
@@ -19,7 +22,12 @@ const pool = databaseUrl
     })
   : null;
 let initPromise = null;
-const allowedMembersByEmail = new Map(allowedMembers.map((member) => [normalizeEmail(member.email), member]));
+let allowedMembersCache = {
+  fetchedAt: useLocalAllowlistFallback ? Date.now() : 0,
+  membersByEmail: useLocalAllowlistFallback
+    ? new Map(allowedMembers.map((member) => [normalizeEmail(member.email), member]))
+    : new Map(),
+};
 
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
 const mimeTypes = {
@@ -144,6 +152,115 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function parseCsv(rawCsv) {
+  const rows = [];
+  let row = [];
+  let value = "";
+  let quoted = false;
+
+  for (let index = 0; index < rawCsv.length; index += 1) {
+    const char = rawCsv[index];
+    const nextChar = rawCsv[index + 1];
+
+    if (quoted) {
+      if (char === '"' && nextChar === '"') {
+        value += '"';
+        index += 1;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        value += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      quoted = true;
+    } else if (char === ",") {
+      row.push(value);
+      value = "";
+    } else if (char === "\n") {
+      row.push(value);
+      rows.push(row);
+      row = [];
+      value = "";
+    } else if (char !== "\r") {
+      value += char;
+    }
+  }
+
+  row.push(value);
+  rows.push(row);
+  return rows.filter((cells) => cells.some((cell) => cell.trim()));
+}
+
+function readMembersFromCsv(rawCsv) {
+  const rows = parseCsv(rawCsv);
+  if (!rows.length) return [];
+
+  const headers = rows[0].map((header) => header.trim().toLowerCase());
+  const emailColumn = headers.findIndex((header) => header.includes("email"));
+  const nameColumn = headers.findIndex((header) => header === "name" || header.includes("full name"));
+  const dataRows = emailColumn >= 0 ? rows.slice(1) : rows;
+  const members = [];
+  const seenEmails = new Set();
+
+  for (const row of dataRows) {
+    const emailCell = emailColumn >= 0 ? row[emailColumn] : row.find((cell) => isValidEmail(normalizeEmail(cell)));
+    const email = normalizeEmail(emailCell);
+    if (!isValidEmail(email) || seenEmails.has(email)) continue;
+
+    const name = nameColumn >= 0 ? String(row[nameColumn] ?? "").trim() : "";
+    members.push({ email, name: name || email });
+    seenEmails.add(email);
+  }
+
+  return members;
+}
+
+async function fetchGoogleSheetMembers() {
+  if (!googleSheetCsvUrl) {
+    if (useLocalAllowlistFallback) return allowedMembersCache.membersByEmail;
+    throw new Error("GOOGLE_SHEET_CSV_URL is required for member authentication.");
+  }
+
+  const response = await fetch(googleSheetCsvUrl, { headers: { accept: "text/csv,text/plain,*/*" } });
+  if (!response.ok) {
+    throw new Error(`Google Sheet allowlist returned ${response.status}.`);
+  }
+
+  const members = readMembersFromCsv(await response.text());
+  if (!members.length) {
+    throw new Error("Google Sheet allowlist did not contain any valid email addresses.");
+  }
+
+  return new Map(members.map((member) => [normalizeEmail(member.email), member]));
+}
+
+async function getAllowedMembersByEmail({ forceRefresh = false } = {}) {
+  const now = Date.now();
+  const shouldRefresh =
+    forceRefresh ||
+    (!useLocalAllowlistFallback && !allowedMembersCache.fetchedAt) ||
+    (googleSheetCsvUrl && now - allowedMembersCache.fetchedAt > memberRefreshMs);
+  if (!shouldRefresh) return allowedMembersCache.membersByEmail;
+
+  try {
+    const membersByEmail = await fetchGoogleSheetMembers();
+    allowedMembersCache = { fetchedAt: now, membersByEmail };
+  } catch (error) {
+    if (googleSheetCsvUrl && !allowedMembersCache.fetchedAt) throw error;
+    console.error(error instanceof Error ? error.message : "Failed to refresh Google Sheet allowlist.");
+  }
+
+  return allowedMembersCache.membersByEmail;
+}
+
+async function getAllowedMember(email) {
+  const membersByEmail = await getAllowedMembersByEmail();
+  return membersByEmail.get(normalizeEmail(email)) ?? null;
+}
+
 function base64Url(value) {
   return Buffer.from(value).toString("base64url");
 }
@@ -187,6 +304,11 @@ async function requireUser(request, response) {
     sendJson(response, 401, { error: "Please sign in again." });
     return null;
   }
+  const allowedMember = await getAllowedMember(user.email);
+  if (!allowedMember) {
+    sendJson(response, 403, { error: "This email is not approved for member access.", code: "member_not_found" });
+    return null;
+  }
   return { user };
 }
 
@@ -199,7 +321,7 @@ async function handleApi(request, response) {
       const email = normalizeEmail(body.email);
       if (!isValidEmail(email)) return sendJson(response, 400, { error: "Enter a valid email address." });
 
-      const allowedMember = allowedMembersByEmail.get(email);
+      const allowedMember = await getAllowedMember(email);
       if (!allowedMember) {
         return sendJson(response, 403, { error: "This email is not approved for member access.", code: "member_not_found" });
       }

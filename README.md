@@ -34,8 +34,9 @@ Open the Vite URL shown by `npm run dev`. The frontend proxies `/api` requests t
 The app now includes a Node auth server backed by PostgreSQL. Set `DATABASE_URL` before starting the server. The server creates the required tables automatically on startup.
 
 - Users sign in with email only.
-- Access is limited to the member email allowlist in `server/allowedMembers.js`.
+- Access is limited to the member email allowlist in the configured Google Sheet.
 - Approved members are created automatically on first sign-in.
+- Newly added Google Sheet emails are picked up automatically after the member list refresh interval.
 - Signed bearer tokens keep users authenticated.
 - Each user's journey progress is saved through `/api/save`.
 - User account data is stored in the `users` table.
@@ -48,6 +49,7 @@ Required environment variables:
 ```bash
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
 AUTH_SECRET="replace-with-a-long-random-secret"
+GOOGLE_SHEET_CSV_URL="https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0"
 ```
 
 If your hosted PostgreSQL provider requires SSL, set:
@@ -55,6 +57,14 @@ If your hosted PostgreSQL provider requires SSL, set:
 ```bash
 DATABASE_SSL="true"
 ```
+
+The Google Sheet must be accessible to the server as a CSV export. In Google Sheets, use **File > Share > Publish to web** and publish the member tab as CSV, or use the export URL above with the correct `SHEET_ID` and `gid`. The sheet should have an `Email` column; an optional `Name` column will be used for the displayed user name. The server refreshes the sheet every 60 seconds by default. To change that, set:
+
+```bash
+MEMBER_REFRESH_MS="30000"
+```
+
+In production, `GOOGLE_SHEET_CSV_URL` is required. The old generated allowlist file is only used as a local development fallback when the sheet URL is not set.
 
 For production, build the frontend and run the same Node server:
 
